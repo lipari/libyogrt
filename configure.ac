@@ -8,7 +8,7 @@ AC_CONFIG_SRCDIR([src/yogrt.h])
 AC_CONFIG_HEADER([config.h])
 
 AC_CANONICAL_HOST
-AC_CANONICAL_SYSTEM
+AC_CANONICAL_TARGET
 AC_DISABLE_STATIC
 
 # Automake support
@@ -17,7 +17,7 @@ AM_MAINTAINER_MODE
 
 # Checks for programs.
 AC_PROG_CC
-AC_PROG_LIBTOOL
+LT_INIT
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
