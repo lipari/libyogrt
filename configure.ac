@@ -37,6 +37,11 @@ case "$host" in
                       aix_64bit_mode=yes
                   fi
         ;;
+	powerpc64-*-*-*) AC_DEFINE(HAVE_BGQ, [], [Define if system is BGQ])
+		CPPFLAGS = "$CPPFLAGS -DHAVE_BGQ"
+		AC_MSG_CHECKING([whether we are on a ppc64 machine])
+		AC_MSG_RESULT(yes)
+        ;;
 esac
 AM_CONDITIONAL([WANT_AIXSLURM_PROGRAM],
   [test "$using_aix" = yes && test "$aix_64bit_mode" = no && test "$slurm_available" = yes])

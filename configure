@@ -11114,6 +11114,15 @@ $as_echo "#define HAVE_AIX_64BIT /**/" >>confdefs.h
                       aix_64bit_mode=yes
                   fi
         ;;
+	powerpc64-*-*-*)
+$as_echo "#define HAVE_BGQ /**/" >>confdefs.h
+
+		CPPFLAGS = "$CPPFLAGS -DHAVE_BGQ"
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we are on a ppc64 machine" >&5
+$as_echo_n "checking whether we are on a ppc64 machine... " >&6; }
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        ;;
 esac
  if test "$using_aix" = yes && test "$aix_64bit_mode" = no && test "$slurm_available" = yes; then
   WANT_AIXSLURM_PROGRAM_TRUE=
