@@ -74,11 +74,15 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkgincludedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libyogrt_la_DEPENDENCIES =
-am_libyogrt_la_OBJECTS = libyogrt_la-yogrt.lo
+am__libyogrt_la_SOURCES_DIST = yogrt.c
+@HAVE_BGQ_FALSE@am_libyogrt_la_OBJECTS = libyogrt_la-yogrt.lo
+@HAVE_BGQ_TRUE@am_libyogrt_la_OBJECTS = libyogrt_la-yogrt.lo
 libyogrt_la_OBJECTS = $(am_libyogrt_la_OBJECTS)
 libyogrt_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(libyogrt_la_LDFLAGS) $(LDFLAGS) -o $@
+@HAVE_BGQ_FALSE@am_libyogrt_la_rpath = -rpath $(libdir)
+@HAVE_BGQ_TRUE@am_libyogrt_la_rpath = -rpath $(libdir)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -93,7 +97,7 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(libyogrt_la_SOURCES)
-DIST_SOURCES = $(libyogrt_la_SOURCES)
+DIST_SOURCES = $(am__libyogrt_la_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -273,14 +277,17 @@ top_srcdir = @top_srcdir@
 @WITH_LCRM_TRUE@LCRM_DIR = lcrm
 @HAVE_AIX_TRUE@AIXSLURM_DIR = aixslurm
 @WITH_MOAB_TRUE@MOAB_DIR = moab
-SUBDIRS = none $(SLURM_DIR) $(LCRM_DIR) $(MOAB_DIR) $(AIXSLURM_DIR)
-lib_LTLIBRARIES = libyogrt.la
-libyogrt_la_SOURCES = yogrt.c
-libyogrt_la_LIBADD = -ldl
-libyogrt_la_CPPFLAGS = \
-	-DBACKENDDIR=\"$(libdir)/libyogrt\" \
-	-DCONFIGPATH=\"$(sysconfdir)\"
+@HAVE_BGQ_FALSE@lib_LTLIBRARIES = libyogrt.la
+@HAVE_BGQ_TRUE@lib_LTLIBRARIES = libyogrt.la
+@HAVE_BGQ_FALSE@libyogrt_la_SOURCES = yogrt.c
+@HAVE_BGQ_TRUE@libyogrt_la_SOURCES = yogrt.c
+@HAVE_BGQ_FALSE@libyogrt_la_CPPFLAGS = \
+@HAVE_BGQ_FALSE@	-DBACKENDDIR=\"$(libdir)/libyogrt\" \
+@HAVE_BGQ_FALSE@	-DCONFIGPATH=\"$(sysconfdir)\"
 
+@HAVE_BGQ_TRUE@libyogrt_la_CPPFLAGS = -DCONFIGPATH=\"$(sysconfdir)\"
+@HAVE_BGQ_FALSE@SUBDIRS = none $(SLURM_DIR) $(LCRM_DIR) $(MOAB_DIR) $(AIXSLURM_DIR)
+@HAVE_BGQ_FALSE@libyogrt_la_LIBADD = -ldl
 libyogrt_la_LDFLAGS = \
 	-no-undefined \
 	-export-symbols-regex "^i?yogrt_.*" \
@@ -353,7 +360,7 @@ clean-libLTLIBRARIES:
 	  rm -f "$${dir}/so_locations"; \
 	done
 libyogrt.la: $(libyogrt_la_OBJECTS) $(libyogrt_la_DEPENDENCIES) 
-	$(libyogrt_la_LINK) -rpath $(libdir) $(libyogrt_la_OBJECTS) $(libyogrt_la_LIBADD) $(LIBS)
+	$(libyogrt_la_LINK) $(am_libyogrt_la_rpath) $(libyogrt_la_OBJECTS) $(libyogrt_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

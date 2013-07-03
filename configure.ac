@@ -28,6 +28,7 @@ X_AC_MOAB
 
 aix_64bit_mode=no
 using_aix=no
+have_bgq=no
 case "$host" in
 	*-*-aix*) AC_DEFINE(HAVE_AIX, [], [Define if system is AIX])
                   using_aix=yes
@@ -38,7 +39,7 @@ case "$host" in
                   fi
         ;;
 	powerpc64-*-*-*) AC_DEFINE(HAVE_BGQ, [], [Define if system is BGQ])
-		CPPFLAGS = "$CPPFLAGS -DHAVE_BGQ"
+		have_bgq=yes
 		AC_MSG_CHECKING([whether we are on a ppc64 machine])
 		AC_MSG_RESULT(yes)
         ;;
@@ -48,6 +49,7 @@ AM_CONDITIONAL([WANT_AIXSLURM_PROGRAM],
 AM_CONDITIONAL([WANT_AIXSLURM_SPANK_PLUGIN],
   [test "$using_aix" = yes && test "$aix_64bit_mode" = no && test "$slurm_available" = yes])
 AM_CONDITIONAL([HAVE_AIX], [test "$using_aix" = yes])
+AM_CONDITIONAL([HAVE_BGQ], [test "$have_bgq" = yes])
 
 AC_CONFIG_FILES([Makefile
                  doc/Makefile

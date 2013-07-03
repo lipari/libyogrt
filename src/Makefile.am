@@ -11,14 +11,18 @@ if WITH_MOAB
   MOAB_DIR = moab
 endif
 
-SUBDIRS = none $(SLURM_DIR) $(LCRM_DIR) $(MOAB_DIR) $(AIXSLURM_DIR)
-
 lib_LTLIBRARIES = libyogrt.la
 libyogrt_la_SOURCES = yogrt.c
+if HAVE_BGQ
+libyogrt_la_CPPFLAGS = -DCONFIGPATH=\"$(sysconfdir)\"
+else
+SUBDIRS = none $(SLURM_DIR) $(LCRM_DIR) $(MOAB_DIR) $(AIXSLURM_DIR)
+
 libyogrt_la_LIBADD = -ldl
 libyogrt_la_CPPFLAGS = \
 	-DBACKENDDIR=\"$(libdir)/libyogrt\" \
 	-DCONFIGPATH=\"$(sysconfdir)\"
+endif
 libyogrt_la_LDFLAGS = \
 	-no-undefined \
 	-export-symbols-regex "^i?yogrt_.*" \

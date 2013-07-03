@@ -6,6 +6,9 @@
 /* Define for 64-bit build on AIX */
 #undef HAVE_AIX_64BIT
 
+/* Define if system is BGQ */
+#undef HAVE_BGQ
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
@@ -96,9 +99,6 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* Define if system is BGQ */
-#undef HAVE_BGQ
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
