@@ -18,6 +18,13 @@ BuildRequires: slurm slurm-devel
 Requires: slurm
 %endif
 
+%ifarch ppc64
+%define debug_package %{nil}
+%define _includedir /bgsys/drivers/ppcfloor/comm/sys/include
+%define _libdir /bgsys/drivers/ppcfloor/comm/sys/lib
+%define _sysconfdir /bgsys/drivers/ppcfloor/utility/etc
+%endif
+
 # Disable automatic rpm requirement generation only on AIX
 %ifos aix5.3 aix5.2 aix5.1 aix5.0 aix4.3
 %define _use_internal_dependency_generator 0
@@ -74,6 +81,9 @@ cd $TMP
 ar -Xany cr libyogrt.a $TMP/32/* $TMP/64/*
 cd $TOP
 rm -rf $TMP/orig
+%elseifarch ppc64
+%configure --enable-static --enable-shared=no
+make
 %else
 %configure
 make
@@ -116,6 +126,9 @@ fi
 %{_libdir}/libyogrt/*.a
 %{_libdir}/libyogrt/libyogrt-spank-plugin.so
 %{_libexecdir}/libyogrt_slurm_timed
+%elseifarch ppc64
+%{_libdir}/*.a
+%exclude %{_libdir}/*.la
 %else
 %{_libdir}/*.*
 %{_libdir}/libyogrt/*

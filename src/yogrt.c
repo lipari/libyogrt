@@ -32,6 +32,7 @@
 #include <sys/stat.h>
 #include <ctype.h>
 #include <dlfcn.h>
+#include <netdb.h>
 
 #include "yogrt.h"
 #include "internal_yogrt.h"
@@ -65,6 +66,88 @@ static struct backend_operations {
 	int    (*fudge)    (void);
 } backend;
 
+#ifdef HAVE_BGQ
+static char *job_id_str;
+static char rt_server[64];
+static int  rt_port = 0;
+
+
+static int _bgq_get_rem_time()
+{
+	char	buffer[256];
+	int	rem_secs = 0;
+	int	sockfd, n;
+	struct hostent *server;
+	struct sockaddr_in serv_addr;
+
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0) {
+		error("ERROR opening socket");
+		return -1;
+	}
+
+	server = gethostbyname(rt_server);
+	if (server == NULL) {
+		error("ERROR, no such host\n");
+		return -1;
+	}
+
+	memset((void *) &serv_addr, 0, sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+	bcopy((char *)server->h_addr,
+	      (char *)&serv_addr.sin_addr.s_addr,
+	      server->h_length);
+	serv_addr.sin_port = htons(rt_port);
+
+	if (connect(sockfd, (struct sockaddr *)&serv_addr,
+		    sizeof(serv_addr)) < 0) {
+		error("ERROR connecting");
+		return -1;
+	}
+
+	memset((void *) buffer, 0, sizeof(buffer));
+	strncpy(buffer, job_id_str, sizeof(buffer));
+
+	n = write(sockfd, buffer, strlen(buffer));
+	if (n < 0) {
+		error("ERROR writing to socket");
+		return -1;
+	}
+
+	memset((void *) buffer, 0, sizeof(buffer));
+	n = read(sockfd, buffer, sizeof(buffer) - 1);
+	if (n < 0) {
+		error("ERROR reading from socket");
+		return -1;
+	}
+	close(sockfd);
+	rem_secs = (int)strtol(buffer, NULL, 0);
+	debug("Job %s has %d seconds remaining\n", job_id_str, rem_secs);
+
+	return rem_secs;
+}
+
+static void _bgq_get_rank(void)
+{
+	char *r;
+
+	if ((r = getenv("SLURM_PROCID")) != NULL) {
+		rank = (int)strtol(r, NULL, 0);
+	}
+
+	return;
+}
+
+static int _bgq_init(void)
+{
+	_bgq_get_rank();
+	debug("Rank is %d\n", rank);
+	debug("Backend implementation is BGQ\n");
+	debug("Using backend fudge factor of %d sec.\n", fudge_factor);
+
+	return valid;
+}
+#endif
 
 static inline void strip_whitespace(char *str)
 {
@@ -177,6 +260,16 @@ static inline void read_config_file(void)
 			fudge_factor = (int)atol(value);
 			fudge_factor_set = 1;
 			debug("In yogrt.conf: %s=%d\n", key, fudge_factor);
+#ifdef HAVE_BGQ
+		} else if (strcasecmp(key, "rem_time_server") == 0
+		    || strcasecmp(key, "yogrt_rem_time_server") == 0) {
+			strncpy(rt_server, value, sizeof(rt_server));
+			debug("In yogrt.conf: %s=%s\n", key, rt_server);
+		} else if (strcasecmp(key, "rem_time_port") == 0
+			   || strcasecmp(key, "yogrt_rem_time_port") == 0) {
+			rt_port = (int)strtol(value, NULL, 0);
+			debug("In yogrt.conf: %s=%d\n", key, rt_port);
+#endif
 		}
 	}
 	fclose(fp);
@@ -233,8 +326,27 @@ static inline void read_env_variables(void)
 		fudge_factor_set = 1;
 		debug("In environment: YOGRT_FUDGE_FACTOR=%d\n", fudge_factor);
 	}
+#ifdef HAVE_BGQ
+	if ((p = getenv("YOGRT_REM_TIME_SERVER")) != NULL) {
+		strncpy(rt_server, p, sizeof(rt_server));
+		debug("In environment: YOGRT_REM_TIME_SERVER=%s\n", rt_server);
+	}
+	if ((p = getenv("YOGRT_REM_TIME_PORT")) != NULL) {
+		rt_port = (int)strtol(p, NULL, 0);
+		debug("In environment: YOGRT_REM_TIME_PORT=%d\n", rt_port);
+	}
+
+	if ((job_id_str = getenv("SLURM_JOB_ID")) == NULL) {
+		if ((job_id_str = getenv("SLURM_JOBID")) == NULL) {
+			valid = 0;
+			error("Neither SLURM_JOBID nor SLURM_JOB_ID are set."
+			      " Remaining time will be a bogus value.\n");
+		}
+	}
+#endif
 }
 
+#ifndef HAVE_BGQ
 static inline int load_backend(void)
 {
 	char path[512];
@@ -295,6 +407,7 @@ static inline int load_backend(void)
 
 	return 1;
 }
+#endif
 
 static int init_yogrt(void)
 {
@@ -312,7 +425,11 @@ static int init_yogrt(void)
 		}
 		read_config_file();
 		read_env_variables();
+#ifdef HAVE_BGQ
+		rc = _bgq_init();
+#else
 		rc = load_backend();
+#endif
 	}
 
 	return rc;
@@ -353,9 +470,11 @@ int yogrt_remaining(void)
 	int rc;
 
 	init_yogrt();
+#ifndef HAVE_BGQ
 	if (backend_handle == NULL) {
 		return INT_MAX;
 	}
+#endif
 
         if (valid == 0) {
                 debug2("Environment is not valid.  Returning INT_MAX.\n");
@@ -369,11 +488,16 @@ int yogrt_remaining(void)
 
         now = time(NULL);
 	if (need_update(now)) {
+#ifdef HAVE_BGQ
+		rem = _bgq_get_rem_time();
+		now = time(NULL);
+#else
 		if (backend.remaining != NULL) {
 			rem = backend.remaining(now, last_update,
 						cached_time_rem);
                         now = time(NULL);
 		}
+#endif
 		if (rem != -1) {
 			last_update_failed = 0;
 			cached_time_rem = rem;

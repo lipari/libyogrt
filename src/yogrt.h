@@ -82,6 +82,7 @@ extern void yogrt_set_remaining(int seconds);
 extern void yogrt_set_interval1(int seconds);
 extern void yogrt_set_interval2(int seconds);
 extern void yogrt_set_interval2_start(int seconds_before_end);
+extern void yogrt_set_fudge_factor(int seconds);
 
 /*
  * Report the current value of update interval1.
@@ -97,6 +98,11 @@ extern int yogrt_get_interval2(void);
  * Report the current value of interval2_start.
  */
 extern int yogrt_get_interval2_start(void);
+
+/*
+ * Report the current value of fudge_factor.
+ */
+extern int yogrt_get_fudge_factor(void);
 
 /*
  * Report or set libyogrt's internal debugging level.
